@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.bot_state/
+shots/
+auth.json
+auth.json.b64
+*.sqlite3
