@@ -1,0 +1,35 @@
+name: metrics-refresh
+on:
+  schedule:
+    - cron: "0 13 * * SAT"   # Saturdays 13:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/cache/restore@v4
+        with:
+          path: .bot_state
+          key: trending-bot-db-v1-${{ github.run_id }}
+          restore-keys: |
+            trending-bot-db-v1-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Refresh top posts (cap reads)
+        env:
+          TWITTER_API_KEY:        ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET:     ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN:    ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET:   ${{ secrets.TWITTER_ACCESS_SECRET }}
+          METRICS_REFRESH_PER_WEEK: "6"         # bump to 8 if you want; stays under Free cap most months
+          METRICS_REFRESH_WINDOW_DAYS: "14"
+        run: python metrics/refresh_top.py
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .bot_state
+          key: trending-bot-db-v1-${{ github.run_id }}
