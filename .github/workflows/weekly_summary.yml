@@ -1,0 +1,29 @@
+name: weekly-summary
+on:
+  schedule:
+    - cron: "0 12 * * MON"   # Mondays 12:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore bot state cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .bot_state
+          key: trending-bot-db-v1-${{ github.run_id }}
+          restore-keys: |
+            trending-bot-db-v1-
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - name: Build weekly report
+        run: python metrics/weekly_summary.py
+      - name: Upload weekly report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-trending-report
+          path: reports/*.md
